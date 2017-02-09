@@ -35,6 +35,33 @@ define([
 
         postCreate: function() {
             logger.debug(this.id + ".postCreate");
+            //Polyfill so we can use element.closest in IE
+            // matches polyfill
+            window.Element && function(ElementPrototype) {
+                ElementPrototype.matches = ElementPrototype.matches ||
+                    ElementPrototype.matchesSelector ||
+                    ElementPrototype.webkitMatchesSelector ||
+                    ElementPrototype.msMatchesSelector ||
+                    function(selector) {
+                        var node = this,
+                            nodes = (node.parentNode || node.document).querySelectorAll(selector),
+                            i = -1;
+                        while (nodes[++i] && nodes[i] != node);
+                        return !!nodes[i];
+                    };
+            }(Element.prototype);
+
+            // closest polyfill
+            window.Element && function(ElementPrototype) {
+                ElementPrototype.closest = ElementPrototype.closest ||
+                    function(selector) {
+                        var el = this;
+                        while (el.matches && !el.matches(selector)) el = el.parentNode;
+                        return el.matches ? el : null;
+                    };
+            }(Element.prototype);
+
+            //End polyfill
         },
 
         update: function(obj, callback) {
@@ -54,39 +81,44 @@ define([
         },
         // .region-content .mx-scrollcontainer-wrapper
         _setupListeners: function() {
-          var widget = this;
-          setTimeout(function(){
-            // get elements with focus index
-            var elements = widget._getElementsWithFocusIndex();
+            var widget = this;
+            setTimeout(function() {
+                // get elements with focus index
+                var elements = widget._getElementsWithFocusIndex();
 
-            // for each, add the event listener and dataset attribute on the
-            //  appropriate child
-            for (var i = 0; i < elements.length-1; i++) {
-              var target = elements[i].querySelector('input');
-                target.dataset.nextMxElement = elements[i+1].getAttribute('focusindex');
-                target.addEventListener('blur', widget._doScroll);
-            }
-          }, 3000);
+                // for each, add the event listener and dataset attribute on the
+                //  appropriate child
+                for (var i = 0; i < elements.length - 1; i++) {
+                    var target = elements[i].querySelector('input');
+                    target.dataset.nextMxElement = elements[i + 1].getAttribute('focusindex');
+                    target.addEventListener('blur', widget._doScroll);
+                }
+            }, 3000);
 
         },
 
         _getElementsWithFocusIndex: function() {
-          return Array.from(document.querySelectorAll('[focusindex]')) // inputs, selects
-              .filter(function(e) {return e.getAttribute('focusindex')*1 != 0;}) // only elements with a tab index
-              .sort(function(a, b) {return a.getAttribute('focusindex')*1 - b.getAttribute('focusindex')*1;}); // sorted smallest to highest
+            return Array.from(document.querySelectorAll('[focusindex]')) // inputs, selects
+                .filter(function(e) {
+                    return e.getAttribute('focusindex') * 1 != 0;
+                }) // only elements with a tab index
+                .sort(function(a, b) {
+                    return a.getAttribute('focusindex') * 1 - b.getAttribute('focusindex') * 1;
+                }); // sorted smallest to highest
         },
 
         _doScroll: function(el) {
-          // console.log('calling handler');
-          // animate the right part of the page to scroll to the element at
-          //  el.target.dataset.nextMxElement
-          // var depth = document.querySelector('[focusindex="'+el.target.dataset.nextMxElement+'"]').getBoundingClientRect().top;
-          // need to programmatically find which element to scroll
-          $('.mx-scrollcontainer-center  > .mx-scrollcontainer-wrapper')
-            .scrollTo(
-              $('[focusindex="'+el.target.dataset.nextMxElement+'"]'),
-              {duration: 2000}
-            );
+            // console.log('calling handler');
+            // animate the right part of the page to scroll to the element at
+            //  el.target.dataset.nextMxElement
+            // var depth = document.querySelector('[focusindex="'+el.target.dataset.nextMxElement+'"]').getBoundingClientRect().top;
+            // need to programmatically find which element to scroll
+            $(el.target.closest('.mx-scrollcontainer-wrapper'))
+                .scrollTo(
+                    $('[focusindex="' + el.target.dataset.nextMxElement + '"]'), {
+                        duration: 2000
+                    }
+                );
 
         },
 
