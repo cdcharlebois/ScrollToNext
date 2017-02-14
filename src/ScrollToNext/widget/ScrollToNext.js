@@ -85,38 +85,37 @@ define([
         // .region-content .mx-scrollcontainer-wrapper
         _setupListeners: function() {
             var widget = this;
-            setTimeout(function() {
-                // get elements with focus index
-                // var elements = widget._getElementsWithFocusIndex();
-                var targetEls = widget._getElements();
+            var wait = setInterval(function() {
+              if (widget._getElements().length > 0) {
+                act();
+                clearInterval(wait);
+              }
+            }, 100);
+            var act = function(){
+              var targetEls = widget._getElements();
+              for (var i = 0; i < targetEls.length; i++) {
+                  // if (targetEls[i].tagName.toUpperCase() === 'SELECT'){
+                  //   // also add change for select
+                  //   widget.connect(targetEls[i], "change", widget._doScroll);
+                  // }
+                  // else {
+                    widget.connect(targetEls[i], "blur", widget._doScroll);
+                  // }
+              }
+            };
 
-                // for each, add the event listener and dataset attribute on the
-                //  appropriate child
-                for (var i = 0; i < targetEls.length - 1; i++) {
-                    targetEls[i].addEventListener('blur', widget._doScroll);
-                }
-            }, 3000);
-
-        },
-
-        _getElementsWithFocusIndex: function() {
-            return Array.from(document.querySelectorAll('[focusindex]')) // inputs, selects
-                .filter(function(e) {
-                    return e.getAttribute('focusindex') * 1 != 0;
-                }) // only elements with a tab index
-                .sort(function(a, b) {
-                    return a.getAttribute('focusindex') * 1 - b.getAttribute('focusindex') * 1;
-                }); // sorted smallest to highest
         },
 
         _getElements: function() {
           var ret = [];
           for (var i = 0; i < this.elements.length; i++){
             var thisEl = document.querySelector('.mx-name-' + this.elements[i].mxName);
+            if (!thisEl) continue;
             var target = thisEl.querySelector('input, select');
-            if (i < this.elements.length-1){
-                target.dataset.mxNext = i+1;
-            }
+            if (!target) continue;
+            // if (i < this.elements.length-1){
+            //     target.dataset.mxNext = i+1;
+            // }
             target.dataset.mxCurr = i;
             ret.push(target);
           }
@@ -126,14 +125,35 @@ define([
         _doScroll: function(el) {
             // animate the right part of the page to scroll to the element at
             //  el.target.dataset.nextMxElement
+            var $wrapper = $(el.target.closest('.mx-scrollcontainer-wrapper'))
+            // ,   $target  = $('[data-mx-curr="' + el.target.dataset.mxNext + '"]');
+            ,   $target  = this._getNextVisibleElement(el.target.dataset.mxCurr*1);
 
-            $(el.target.closest('.mx-scrollcontainer-wrapper'))
-                .scrollTo(
-                    $('[data-mx-curr="' + el.target.dataset.mxNext + '"]'), {
-                        duration: 2000
-                    }
-                );
+            if ($target){
+              $wrapper
+                  .scrollTo(
+                      $target, {
+                          duration: 2000,
+                          offset: (-$(window).height() / 2) + $wrapper.offset().top
+                      }
+                  );
+            }
 
+
+        },
+
+        // Get next visible element
+        // ------------------------
+        // @param start : number : the index in `this.elements` of the just
+        //  completed element.
+        // @RETURN : htmlElement : the next visible element
+        _getNextVisibleElement: function(start){
+          for (var i = start+1; i < this.elements.length; i++) {
+            var $target = $('.mx-name-' + this.elements[i].mxName);
+            if ($target && $target.is(':visible')) return $target;
+            else continue;
+          }
+          return null;
         },
 
         _updateRendering: function(callback) {
