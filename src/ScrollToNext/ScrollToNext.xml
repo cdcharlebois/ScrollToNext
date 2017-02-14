@@ -6,10 +6,17 @@
     <icon />
 
     <properties>
-        <property key="dummyKey" type="string" required="false" defaultValue="">
-            <caption>Dummy key</caption>
-            <category>Appearance</category>
-            <description>This key was added to make the widget work in the Modeler (needs atleast 1 key). Please change/remove this one</description>
-        </property>
+      <property key="elements" type="object" required="false" isList="true">
+          <caption>Elements</caption>
+          <category>Scroll Pattern</category>
+          <description>Each item in this list will be scrolled to, upon the previous one losing focus.</description>
+          <properties>
+              <property key="mxName" type="string" required="true">
+                  <caption>Selector</caption>
+                  <category>Main</category>
+                  <description>Mendix name for the element.</description>
+              </property>
+          </properties>
+      </property>
     </properties>
 </widget>

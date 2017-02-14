@@ -29,6 +29,9 @@ define([
         _handles: null,
         _contextObj: null,
 
+        //modeler
+        elements: null,
+
         constructor: function() {
             this._handles = [];
         },
@@ -84,14 +87,13 @@ define([
             var widget = this;
             setTimeout(function() {
                 // get elements with focus index
-                var elements = widget._getElementsWithFocusIndex();
+                // var elements = widget._getElementsWithFocusIndex();
+                var targetEls = widget._getElements();
 
                 // for each, add the event listener and dataset attribute on the
                 //  appropriate child
-                for (var i = 0; i < elements.length - 1; i++) {
-                    var target = elements[i].querySelector('input');
-                    target.dataset.nextMxElement = elements[i + 1].getAttribute('focusindex');
-                    target.addEventListener('blur', widget._doScroll);
+                for (var i = 0; i < targetEls.length - 1; i++) {
+                    targetEls[i].addEventListener('blur', widget._doScroll);
                 }
             }, 3000);
 
@@ -107,15 +109,27 @@ define([
                 }); // sorted smallest to highest
         },
 
+        _getElements: function() {
+          var ret = [];
+          for (var i = 0; i < this.elements.length; i++){
+            var thisEl = document.querySelector('.mx-name-' + this.elements[i].mxName);
+            var target = thisEl.querySelector('input, select');
+            if (i < this.elements.length-1){
+                target.dataset.mxNext = i+1;
+            }
+            target.dataset.mxCurr = i;
+            ret.push(target);
+          }
+          return ret;
+        },
+
         _doScroll: function(el) {
-            // console.log('calling handler');
             // animate the right part of the page to scroll to the element at
             //  el.target.dataset.nextMxElement
-            // var depth = document.querySelector('[focusindex="'+el.target.dataset.nextMxElement+'"]').getBoundingClientRect().top;
-            // need to programmatically find which element to scroll
+
             $(el.target.closest('.mx-scrollcontainer-wrapper'))
                 .scrollTo(
-                    $('[focusindex="' + el.target.dataset.nextMxElement + '"]'), {
+                    $('[data-mx-curr="' + el.target.dataset.mxNext + '"]'), {
                         duration: 2000
                     }
                 );
